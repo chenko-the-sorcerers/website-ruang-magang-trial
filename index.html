@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dasbor Riset Validasi - Portal Magang</title>
+    <!-- Chosen Palette: Calm Focus -->
+    <!-- Application Structure Plan: Saya merancang aplikasi ini sebagai dasbor tematik, bukan laporan linear. Struktur ini memungkinkan pengguna menjelajahi data berdasarkan minat, dari masalah utama hingga solusi yang direkomendasikan. Alurnya adalah: (1) Judul & Ringkasan Masalah, (2) Dasbor Wawasan Kunci, (3) Navigasi untuk melompat ke bagian-bagian seperti 'Masalah Utama', 'Profil Responden', 'Kebutuhan Pengguna', dan 'Peluang & Peta Jalan'. Struktur ini lebih intuitif dan membuat data kompleks lebih mudah dicerna dan ditindaklanjuti, sangat ideal untuk presentasi kepada pemangku kepentingan atau orientasi tim magang. -->
+    <!-- Visualization & Content Choices: Saya menggunakan diagram Donat dan Batang dari Chart.js untuk menyajikan data kuantitatif (proporsi dan perbandingan) karena efektif secara visual dan interaktif. Untuk peta jalan (roadmap) yang bersifat kualitatif, saya menggunakan tata letak HTML/CSS kustom agar lebih jelas dan menarik secara visual. Interaksi utama meliputi tooltip saat hover untuk detail data dan tombol filter pada bagian fitur untuk mendorong eksplorasi. Pilihan ini bertujuan untuk mengubah data statis menjadi cerita yang menarik dan mudah dipahami. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3B82F6;
+            border-bottom-color: #3B82F6;
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-primary {
+            background-color: #3B82F6;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #2563EB;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background-color: #E5E7EB;
+            color: #4B5563;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #D1D5DB;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-gray-800">Riset RuangMagang</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#masalah" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600">Masalah Utama</a>
+                        <a href="#responden" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600">Profil Responden</a>
+                        <a href="#kebutuhan" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600">Kebutuhan Pengguna</a>
+                        <a href="#peluang" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-600">Peluang & Peta Jalan</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <!-- Judul dan Ringkasan -->
+        <section class="text-center mb-12 md:mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Memvalidasi Kebutuhan Portal Magang Terpusat</h2>
+            <p class="max-w-3xl mx-auto text-gray-600 text-base md:text-lg">
+                Riset ini mengungkap tantangan signifikan yang dihadapi mahasiswa Indonesia dalam mencari magang. Data menunjukkan adanya peluang pasar yang jelas untuk sebuah platform tunggal yang efisien, terpercaya, dan terintegrasi.
+            </p>
+        </section>
+
+        <!-- Wawasan Kunci -->
+        <section class="mb-12 md:mb-16">
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="kpi-card">
+                    <div class="text-4xl font-bold text-blue-500 mb-2">4-10</div>
+                    <p class="text-gray-600">Jam per minggu dihabiskan mahasiswa untuk mencari magang, menandakan inefisiensi.</p>
+                </div>
+                <div class="kpi-card">
+                    <div class="text-4xl font-bold text-blue-500 mb-2">3-7</div>
+                    <p class="text-gray-600">Platform berbeda digunakan, menyebabkan fragmentasi informasi dan kelelahan pengguna.</p>
+                </div>
+                <div class="kpi-card">
+                    <div class="text-4xl font-bold text-blue-500 mb-2">66.1%</div>
+                    <p class="text-gray-600">Mahasiswa kurang memahami program MBKM, sebuah celah edukasi yang bisa diisi.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Masalah Utama -->
+        <section id="masalah" class="py-12 md:py-16 bg-white rounded-lg shadow-md mb-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900">Menggali Lebih Dalam: Beban Pencarian Magang</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-base text-gray-500">
+                        Proses pencarian magang saat ini tidak efisien. Mahasiswa harus menyisir banyak platform, menghabiskan waktu berharga yang seharusnya bisa digunakan untuk pengembangan diri. Visualisasi di bawah ini menunjukkan skala masalah tersebut.
+                    </p>
+                </div>
+                <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+                    <div>
+                        <h4 class="text-xl font-semibold text-center mb-4 text-gray-700">Waktu yang Dihabiskan per Minggu</h4>
+                        <div class="chart-container h-64 md:h-80"><canvas id="timeSpentChart"></canvas></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-semibold text-center mb-4 text-gray-700">Jumlah Platform yang Digunakan</h4>
+                        <div class="chart-container h-64 md:h-80"><canvas id="platformsUsedChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profil Responden -->
+        <section id="responden" class="py-12 md:py-16 mb-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900">Mengenal Responden Kita</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-base text-gray-500">
+                        Data divalidasi oleh 221 mahasiswa dari berbagai latar belakang institusi, gender, dan tingkat studi, memastikan wawasan yang representatif dan dapat diandalkan.
+                    </p>
+                </div>
+                <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                    <div>
+                        <h4 class="text-xl font-semibold text-center mb-4 text-gray-700">Distribusi Tipe Institusi</h4>
+                        <div class="chart-container h-72 md:h-80"><canvas id="institutionTypeChart"></canvas></div>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-semibold text-center mb-4 text-gray-700">Distribusi Gender</h4>
+                        <div class="chart-container h-72 md:h-80"><canvas id="genderChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Kebutuhan Pengguna -->
+        <section id="kebutuhan" class="py-12 md:py-16 bg-white rounded-lg shadow-md mb-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900">Apa yang Sebenarnya Mereka Butuhkan?</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-base text-gray-500">
+                        Dari riset, teridentifikasi fitur-fitur krusial dan celah pengetahuan yang dapat menjadi kunci diferensiasi produk. Memahami ini adalah cetak biru untuk membangun platform yang dicintai pengguna.
+                    </p>
+                </div>
+                <div class="mt-10 grid grid-cols-1 lg:grid-cols-5 gap-8">
+                    <div class="lg:col-span-2">
+                        <h4 class="text-xl font-semibold text-center mb-4 text-gray-700">Tingkat Pemahaman Program MBKM</h4>
+                         <div class="chart-container h-72 md:h-80"><canvas id="mbkmAwarenessChart"></canvas></div>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <h4 class="text-xl font-semibold text-center mb-4 text-gray-700">Peringkat Pentingnya Fitur</h4>
+                        <div class="chart-container h-80 md:h-96"><canvas id="featureImportanceChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- LLM Interview Feature -->
+                <div class="mt-12 text-center bg-gray-50 p-6 rounded-lg">
+                    <h4 class="text-2xl font-bold text-gray-800 mb-4">Dapatkan Pertanyaan Wawancara ✨</h4>
+                    <p class="text-gray-600 mb-4">Pilih peran dan biarkan AI membantu Anda menyiapkan pertanyaan wawancara untuk calon magang.</p>
+                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                        <select id="roleSelect" class="block w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Frontend Developer">Frontend Developer</option>
+                            <option value="UI/UX Designer">UI/UX Designer</option>
+                            <option value="Data Analyst">Data Analyst</option>
+                            <option value="Product Manager">Product Manager</option>
+                        </select>
+                        <button id="generateInterviewBtn" class="btn-primary w-full md:w-auto">
+                            Buat Pertanyaan Wawancara ✨
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Peluang & Peta Jalan -->
+        <section id="peluang" class="py-12 md:py-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900">Peluang Pasar dan Peta Jalan Pengembangan</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-base text-gray-500">
+                        Temuan riset mengkonfirmasi peluang pasar yang kuat. Langkah selanjutnya adalah pengembangan produk secara bertahap, dimulai dari fitur inti yang paling dibutuhkan pengguna.
+                    </p>
+                </div>
+                <div class="mt-12">
+                    <div class="relative">
+                        <!-- Garis Timeline -->
+                        <div class="hidden md:block absolute top-5 left-0 w-full h-0.5 bg-blue-200"></div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                            <!-- Fase 1 -->
+                            <div class="relative flex flex-col items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg mb-4 z-10">1</div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2">Fase 1: Fitur Inti</h4>
+                                <ul class="text-gray-600 space-y-1 text-sm">
+                                    <li>Registrasi Pengguna</li>
+                                    <li>Daftar Lowongan Magang</li>
+                                    <li>Pencarian & Filter</li>
+                                    <li>Pelacakan Lamaran</li>
+                                </ul>
+                            </div>
+                            <!-- Fase 2 -->
+                            <div class="relative flex flex-col items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg mb-4 z-10">2</div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2">Fase 2: Fitur Lanjutan</h4>
+                                <ul class="text-gray-600 space-y-1 text-sm">
+                                    <li>Profil Perusahaan</li>
+                                    <li>Mesin Rekomendasi</li>
+                                    <li>Notifikasi</li>
+                                    <li>Penjadwalan Wawancara</li>
+                                </ul>
+                            </div>
+                            <!-- Fase 3 -->
+                            <div class="relative flex flex-col items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg mb-4 z-10">3</div>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2">Fase 3: Fitur Premium</h4>
+                                <ul class="text-gray-600 space-y-1 text-sm">
+                                    <li>Pembuat Resume (CV)</li>
+                                    <li>Penilaian Keterampilan</li>
+                                    <li>Simulasi Wawancara AI</li>
+                                    <li>Integrasi Kalender</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2023 Riset RuangMagang. Hak Cipta Dilindungi.</p>
+        </div>
+    </footer>
+
+    <div id="interviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h3 class="text-2xl font-bold mb-4">Pertanyaan Wawancara untuk <span id="modalRole"></span></h3>
+            <div id="interviewQuestions" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js Data and Configuration
+        const chartColors = {
+            primary: '#3B82F6',
+            secondary: '#60A5FA',
+            tertiary: '#93C5FD',
+            quaternary: '#BFDBFE',
+            quinary: '#DBEAFE',
+            gray: '#D1D5DB',
+            darkGray: '#4B5563'
+        };
+
+        // Time Spent Chart
+        const timeSpentCtx = document.getElementById('timeSpentChart').getContext('2d');
+        new Chart(timeSpentCtx, {
+            type: 'bar',
+            data: {
+                labels: ['< 2 Jam', '2-4 Jam', '4-10 Jam', '> 10 Jam'],
+                datasets: [{
+                    label: 'Persentase Mahasiswa',
+                    data: [15.3, 35.7, 30.1, 18.9],
+                    backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.quaternary],
+                    borderColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.quaternary],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Persentase (%)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Waktu Dihabiskan per Minggu'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Platforms Used Chart
+        const platformsUsedCtx = document.getElementById('platformsUsedChart').getContext('2d');
+        new Chart(platformsUsedCtx, {
+            type: 'pie',
+            data: {
+                labels: ['1-2 Platform', '3-7 Platform', '> 7 Platform'],
+                datasets: [{
+                    label: 'Persentase Mahasiswa',
+                    data: [25.8, 55.2, 19.0],
+                    backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Institution Type Chart
+        const institutionTypeCtx = document.getElementById('institutionTypeChart').getContext('2d');
+        new Chart(institutionTypeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['PTN', 'PTS', 'Politeknik', 'Lainnya'],
+                datasets: [{
+                    label: 'Persentase Responden',
+                    data: [60.0, 30.0, 7.0, 3.0],
+                    backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary, chartColors.quaternary],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gender Chart
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Perempuan', 'Laki-laki', 'Tidak Menyatakan'],
+                datasets: [{
+                    label: 'Persentase Responden',
+                    data: [55.0, 43.0, 2.0],
+                    backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // MBKM Awareness Chart
+        const mbkmAwarenessCtx = document.getElementById('mbkmAwarenessChart').getContext('2d');
+        new Chart(mbkmAwarenessCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Paham', 'Kurang Paham', 'Tidak Paham Sama Sekali'],
+                datasets: [{
+                    label: 'Persentase Mahasiswa',
+                    data: [33.9, 45.2, 20.9],
+                    backgroundColor: [chartColors.primary, chartColors.secondary, chartColors.tertiary],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Feature Importance Chart
+        const featureImportanceCtx = document.getElementById('featureImportanceChart').getContext('2d');
+        new Chart(featureImportanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Informasi Lengkap Lowongan', 'Filter Pencarian Akurat', 'Notifikasi Lowongan Baru', 'Pelacakan Lamaran', 'Rekomendasi Lowongan', 'Profil Perusahaan'],
+                datasets: [{
+                    label: 'Skor Pentingnya (1-5)',
+                    data: [4.8, 4.7, 4.5, 4.3, 4.2, 4.0],
+                    backgroundColor: chartColors.primary,
+                    borderColor: chartColors.primary,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Makes it a horizontal bar chart
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 5,
+                        title: {
+                            display: true,
+                            text: 'Skor Pentingnya'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Fitur'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Modal Logic
+        const interviewModal = document.getElementById('interviewModal');
+        const closeBtn = document.getElementsByClassName('close-btn')[0];
+        const generateInterviewBtn = document.getElementById('generateInterviewBtn');
+        const roleSelect = document.getElementById('roleSelect');
+        const modalRole = document.getElementById('modalRole');
+        const interviewQuestions = document.getElementById('interviewQuestions');
+
+        generateInterviewBtn.onclick = function() {
+            const selectedRole = roleSelect.value;
+            modalRole.textContent = selectedRole;
+            interviewQuestions.innerHTML = ''; // Clear previous questions
+
+            let questions = [];
+            if (selectedRole === 'Frontend Developer') {
+                questions = [
+                    "Jelaskan alur kerja Anda dalam mengembangkan komponen UI dari desain hingga implementasi.",
+                    "Bagaimana Anda mengoptimalkan kinerja rendering pada aplikasi web yang kompleks?",
+                    "Apa perbedaan antara Shadow DOM, Virtual DOM, dan Regular DOM? Kapan Anda akan menggunakan masing-masing?",
+                    "Bagaimana Anda menangani manajemen state dalam aplikasi React/Vue/Angular berskala besar?",
+                    "Jelaskan konsep 'closure' di JavaScript dan berikan contoh penggunaannya."
+                ];
+            } else if (selectedRole === 'UI/UX Designer') {
+                questions = [
+                    "Jelaskan proses desain UX Anda dari awal hingga akhir untuk sebuah proyek baru.",
+                    "Bagaimana Anda melakukan riset pengguna dan mengintegrasikan temuan ke dalam desain Anda?",
+                    "Apa perbedaan antara UI dan UX? Bagaimana keduanya saling melengkapi?",
+                    "Bagaimana Anda memastikan aksesibilitas dalam desain Anda?",
+                    "Jelaskan bagaimana Anda menggunakan prototipe dan pengujian pengguna dalam alur kerja Anda."
+                ];
+            } else if (selectedRole === 'Data Analyst') {
+                questions = [
+                    "Jelaskan langkah-langkah dalam siklus hidup analisis data.",
+                    "Bagaimana Anda membersihkan dan menyiapkan data yang kotor atau tidak lengkap?",
+                    "Apa perbedaan antara korelasi dan kausalitas? Berikan contoh.",
+                    "Bagaimana Anda memilih metode visualisasi data yang tepat untuk audiens yang berbeda?",
+                    "Jelaskan konsep A/B testing dan bagaimana Anda akan menerapkannya."
+                ];
+            } else if (selectedRole === 'Product Manager') {
+                questions = [
+                    "Bagaimana Anda mengidentifikasi masalah pengguna dan mengubahnya menjadi peluang produk?",
+                    "Jelaskan kerangka kerja pengembangan produk favorit Anda (misalnya, Scrum, Kanban) dan mengapa.",
+                    "Bagaimana Anda memprioritaskan fitur dalam roadmap produk?",
+                    "Bagaimana Anda mengukur keberhasilan suatu produk atau fitur baru?",
+                    "Jelaskan bagaimana Anda mengelola konflik antara tim engineering, desain, dan bisnis."
+                ];
+            }
+
+            questions.forEach((q, index) => {
+                const p = document.createElement('p');
+                p.className = 'text-gray-700';
+                p.textContent = `${index + 1}. ${q}`;
+                interviewQuestions.appendChild(p);
+            });
+
+            interviewModal.style.display = 'flex';
+        };
+
+        closeBtn.onclick = function() {
+            interviewModal.style.display = 'none';
+        };
+
+        window.onclick = function(event) {
+            if (event.target == interviewModal) {
+                interviewModal.style.display = 'none';
+            }
+        };
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Highlight active nav link on scroll
+        const sections = document.querySelectorAll('main section');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - sectionHeight / 3) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.href.includes(current)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
+
